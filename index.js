@@ -639,7 +639,7 @@ const liveStramProcess = async (videoId, ls)=> {
                 );
                 
             } catch(err) {
-                if (err != 'addTickerAction' || err != 'deletedStateMessage' || err != 'liveChatPlaceholder') {
+                if (err != 'addTickerAction' && err != 'deletedStateMessage' && err != 'liveChatPlaceholder') {
                     console.log(err, item);
                 }
             } finally {
