@@ -328,18 +328,18 @@ const liveStramProcess = async (videoId, ls)=> {
         totalChatsByMembers: 0
     }
 
-    const logToDiscord = setInterval(() => {
-        client.guilds.fetch(guildId).then(server => {
-            return server.channels.cache.find(channel => channel.id == '814567886700937279');
-        })
-        .then(channel => {
-            channel.send(
-                'TotalComments/MemberComments: ' + chatAnalysis.totalChats + ' / ' + chatAnalysis.totalChatsByMembers + '\n' +
-                'Members: ' + memberList.size + '\n' +
-                'NotMembers: ' + notMemberList.size
-            ,{ code: 'js' });
-        });
-    }, 60000);
+    // const logToDiscord = setInterval(() => {
+    //     client.guilds.fetch(guildId).then(server => {
+    //         return server.channels.cache.find(channel => channel.id == '814567886700937279');
+    //     })
+    //     .then(channel => {
+    //         channel.send(
+    //             'TotalComments/MemberComments: ' + chatAnalysis.totalChats + ' / ' + chatAnalysis.totalChatsByMembers + '\n' +
+    //             'Members: ' + memberList.size + '\n' +
+    //             'NotMembers: ' + notMemberList.size
+    //         ,{ code: 'js' });
+    //     });
+    // }, 60000);
     
     ls.succeed('Start catching respones...');
 
@@ -355,7 +355,7 @@ const liveStramProcess = async (videoId, ls)=> {
         if (!json.hasOwnProperty('continuationContents')) {
             await sleep(10000);
             console.log('Stream ended.\nRestart live stream check process.'.bgBlue);
-            clearInterval(logToDiscord);
+            // clearInterval(logToDiscord);
             page.off('response');
             page.close();
             browser.close();
