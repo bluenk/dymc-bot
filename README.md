@@ -1,6 +1,6 @@
 # dymc-bot
 
-Discord youtube membership checker, or dymc for short. Is a simple bot that desing to ues in unofficial youtuber fan server for membership checking.
+Discord youtube membership checker, or dymc for short. Is a simple bot that desing to ues in unofficial youtuber/vtuber fan server for membership checking.
 
 
 #### ***Notice*: This bot is design to use in single server, don't use in mulitple server simultaneously.**
@@ -27,7 +27,7 @@ All data will store locally on `./db` folder.
 
 Open `config.json` and change those string before you start the bot.
 
-```json
+```javascript
 {
     "bot_token": "botTokenHere", // Go to https://discord.com/developers/applications and create New Applications > Bot > TOKEN
     "user_token": "userTokenHere", // See how to get your user token https://youtu.be/WWHZoa0SxCc
