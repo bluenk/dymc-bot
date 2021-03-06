@@ -417,6 +417,8 @@ const liveStramProcess = async (videoId, ls)=> {
 
                 if (item.hasOwnProperty('markChatItemsByAuthorAsDeletedAction')) throw 'deletedStateMessage';
 
+                if (item.hasOwnProperty('liveChatPlaceholderItemRenderer')) throw 'liveChatPlaceholder';
+
                 const chatRenderer = item['addChatItemAction']['item'];
                 
                 if (chatRenderer.hasOwnProperty('liveChatPaidMessageRenderer')) isSuperChat = true;
@@ -637,7 +639,7 @@ const liveStramProcess = async (videoId, ls)=> {
                 );
                 
             } catch(err) {
-                if (err != 'addTickerAction' && err != 'deletedStateMessage' ) {
+                if (err != 'addTickerAction' || err != 'deletedStateMessage' || err != 'liveChatPlaceholder') {
                     console.log(err, item);
                 }
             } finally {
