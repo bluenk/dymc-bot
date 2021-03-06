@@ -1,5 +1,5 @@
 /node_modules
 /db
 package-lock.json
-test.json
+test.js
 config.json
