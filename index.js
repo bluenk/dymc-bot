@@ -85,14 +85,14 @@ client.on('message', msg => {
 client.on('guildMemberAdd', async member => {
     if (member.user.bot) return;
 
-    console.log('New discord user!');
+    // console.log('New discord user!');
     try {
         const discordId = member.user.id;
         const proflie = await getUserProfile(discordId).catch(err => {throw err});
 
         if (!proflie) return;
 
-        db.put(discordId, proflie[discordId], (err) => {
+        db.put(proflie.key.youtubeId, proflie.value, (err) => {
             if (err) throw err;
         });
     } catch(err) {
