@@ -29,13 +29,56 @@ Open `config.json` and change those string before you start the bot.
 
 ```javascript
 {
-    "bot_token": "botTokenHere", // Go to https://discord.com/developers/applications and create New Applications > Bot > TOKEN
-    "user_token": "userTokenHere", // See how to get your user token https://youtu.be/WWHZoa0SxCc
+    "bot_token": "botTokenHere",
+    "user_token": ["userTokenHere"],
     "channelId": "someIdThatStartWithU", // Youtube channel ID
-    "roleId": "000000000000000000", // The discord role you want to add on verified users. Type \@yourRoleName on discord to get it.
-    "removeRoleUndetectedAfter": 15, // Days // if user undetected more then this value, remove user role."
-    "analysisDataOnTextChannelId": "", // when stream ended, the analysis data will send to this text channel. leave it blank if you don't want it.
-    "channelExcludeVideoIds": []  // if the channel have video that not gonna stream, like free chat or something.
+    "roleId": "000000000000000000",
+    "removeRoleUndetectedAfter": 15, // Days
+    "updateUserProflie": 6, // Hours
+    "discordRequestDelay": 10, // seconds
+    "analysisDataOnTextChannelId": "",
+    "channelExcludeVideoIds": [],
+    "newMemberBadge": "badgeUrlHere",
+    "channelAvatar": ""
 }
 ```
+
+### `bot_token` 
+
+Go to https://discord.com/developers/applications and create New Applications > Bot > TOKEN, and then enable `Presence Intent` and `Server Members Intent` under the Privileged Gateway Intents.
+
+### `user_token`
+
+See how to get your user token https://youtu.be/WWHZoa0SxCc , you can add miltiple user token to reduce fetch member time on first startup.
+
+### `roleId`
+
+The discord role you want to add on verified users. Type `\@yourRoleName` on discord to get it.
+
+### `removeRoleUndetectedAfter`
+
+If user undetected more then this value, remove user role.
+
+### `updateUserProflie`
+
+Update database every this value, set to 0 if you don't want to update.
+
+### `discordRequestDelay`
+
+Delay between each request to discord.
+
+### `analysisDataOnTextChannelId`
+
+When stream ended, the analysis data will send to this text channel. leave it blank if you don't want it.
+
+### `channelExcludeVideoIds`
+
+if the channel have videos that not gonna stream, like free chat or something.
+
+### `newMemberBadge`
+
+Copy paste the channel new member badge URL, it will look something like this `https://yt3.ggpht.com/i01Y-UCqkjUUeu8TpuXt1hMz7P1ab0vKWesen6OIIGDveOu1m5eOcb8osqnANOPpdyna6RzUkA=s16-c-k`
+
+
+
 And then type in `npm start` to start the bot.

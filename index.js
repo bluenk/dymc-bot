@@ -10,24 +10,28 @@ const config = require('./config.json');
 
 const client = new Client();
 const isFirstStart = !fs.existsSync('./db');
+const haveMultipleUserToken = config['user_token'].length > 1;
 let db;
 let guildId;
-let channelIcon = '';
+let userToken = config['user_token'][0];
+let channelIcon = config['channelAvatar'];
 let channelName;
 
 // ls for loading spinner
 const ls = ora({ interval: 250 });
 const loopDelay = {
     youtube: 1, // minute
-    discord: 6 // hours
+    updateDB: config['updateUserProflie'], // hours
+    discordProfile: config['discordRequestDelay'] // second
 };
 const permissions = 8;
 
 const configCheck = (
     config['bot_token'] == 'botTokenHere' ||
-    config['user_token'] == 'userTokenHere' ||
+    config['user_token'] == ['userTokenHere'] ||
     config['channelId'] == 'someIdThatStartWithU' ||
-    config['roleId'] == '000000000000000000'
+    config['roleId'] == '000000000000000000' ||
+    config['newMemberBadge'] == 'badgeUrlHere'
 )
 
 if (configCheck) {
@@ -65,13 +69,10 @@ client.on('ready',async () => {
         await getDiscordYtIdList(ls);
     }
 
-    updateDBtimer();
+    if (loopDelay.updateDB != 0) {
+        updateDBtimer();
+    }
     
-    // db.createReadStream()
-    //     .on('data', data => {
-    //         console.log(data);
-    //     });
-
     mainProcess();
 });
 
@@ -114,7 +115,7 @@ function mainProcess() {
 }
 
 const updateDBtimer = async () => {
-    await sleep(loopDelay.discord * 3600 * 1000);
+    await sleep(loopDelay.updateDB * 3600 * 1000);
     const onlineUser = (await client.guilds.fetch(guildId)).members.cache.filter(user => user.presence.status != 'offline').array();
     for (const user of onlineUser) {
         const proflie = await getUserProfile(user.id);
@@ -122,7 +123,7 @@ const updateDBtimer = async () => {
            db.put(proflie.key.youtubeId, proflie.value, err => {
                 if (err) throw err;
             });
-            await sleep(1000); 
+            await sleep(Math.ceil((loopDelay.discordProfile * 1000) / config['user_token'].length));
             db.get(proflie.key.youtubeId, (err, value) => {
                 if (err) throw err;
 
@@ -151,19 +152,20 @@ const updateDBtimer = async () => {
 }
 
 const getUserProfile = (discordId) => {
-    return new Promise((resolve, reject) =>{
-        fetch(`https://discord.com/api/v8/users/${discordId}/profile`, { headers: { authorization: config['user_token'] } })
+    return new Promise((resolve, reject) => {
+        fetch(`https://discord.com/api/v8/users/${discordId}/profile`, { headers: { authorization: userToken } })
             .then(res => {
                 // console.log(res.status);
-                return res.json()
+                // console.log(userTokenCount);
+                // If being rate limited
+                if (res.status == 429) throw Error('Reach request rete limit.');
+                
+                if (haveMultipleUserToken) switchUserToken();
+
+                return res.json();
             })
             .then(data => {
-                // If being rate limited
-                if (data.hasOwnProperty('global')) {
-                    console.log(data['retry_after']);
-                    throw Error('Reach request rete limit.')
-                }
-                
+                // console.log(data);
                 const accountLength = data['connected_accounts'].length;
                 if (accountLength) {
                     for (let i = 0; i < accountLength; i++) {
@@ -235,10 +237,11 @@ const getDiscordYtIdList = async (ls) => {
             }
         } catch(err) {
             ls.fail('Fail to get Youtube ID from guild members.');
-            return console.log(err.message);
+            return console.log(err);
         } finally {
             // if server resopnse 'HTTP 429 Too Many Requests', try add some delay between request.
-            await sleep(1000);
+            const delay = loopDelay.discordProfile * 1000;
+            await sleep(Math.ceil(delay / config['user_token'].length));
         }
         
     }
@@ -582,13 +585,13 @@ const liveStramProcess = async (videoId, ls)=> {
 
                 } else {
                     const chat = chatRenderer['liveChatMembershipItemRenderer'];
+                    const newMemberBadge = config['newMemberBadge'].split('=')[0];
 
                     const newChat = {
                         authorName: chat['authorName']['simpleText'],
                         authorChannelId: chat['authorExternalChannelId'],
                         memberDetail: chat['authorBadges'][0]['liveChatAuthorBadgeRenderer']['tooltip'],
-                        isNewMember: chat['authorBadges'][0]['liveChatAuthorBadgeRenderer']['customThumbnail']['thumbnails'][0] ==
-                            'https://yt3.ggpht.com/i01Y-UCqkjUUeu8TpuXt1hMz7P1ab0vKWesen6OIIGDveOu1m5eOcb8osqnANOPpdyna6RzUkA=s16-c-k'
+                        isNewMember: chat['authorBadges'][0]['liveChatAuthorBadgeRenderer']['customThumbnail']['thumbnails'][0].startsWith(newMemberBadge)
                     }
 
                     logMsg = '[Member] ' + newChat.authorName + ' ' + newChat.memberDetail;
@@ -653,6 +656,17 @@ const liveStramProcess = async (videoId, ls)=> {
 
 async function sleep(millis) {
     return new Promise(resolve => setTimeout(resolve, millis));
+}
+
+let userTokenCount = 0;
+function switchUserToken() {
+    if (userTokenCount < config['user_token'].length) {
+        userTokenCount++;
+    } else {
+        userTokenCount = 0;
+    }
+
+    userToken == config['user_token'][userTokenCount];
 }
 
 client.login(config['bot_token']);
