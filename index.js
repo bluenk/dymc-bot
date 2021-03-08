@@ -13,6 +13,7 @@ const isFirstStart = !fs.existsSync('./db');
 const haveMultipleUserToken = config['user_token'].length > 1;
 let db;
 let guildId;
+let newGuildMember = [];
 let userToken = config['user_token'][0];
 let channelIcon = config['channelAvatar'];
 let channelName;
@@ -67,12 +68,15 @@ client.on('ready',async () => {
 
     if (isFirstStart) {
         await getDiscordYtIdList(ls);
+        await addNewGuildMember();
     }
 
     if (loopDelay.updateDB != 0) {
         updateDBtimer();
     }
     
+    
+
     mainProcess();
 });
 
@@ -82,43 +86,53 @@ client.on('message', msg => {
 
 });
 
-client.on('guildMemberAdd', async member => {
-    if (member.user.bot) return;
-
-    // console.log('New discord user!');
-    try {
-        const discordId = member.user.id;
-        const proflie = await getUserProfile(discordId).catch(err => {throw err});
-
-        if (!proflie) return;
-
-        db.put(proflie.key.youtubeId, proflie.value, (err) => {
-            if (err) throw err;
-        });
-    } catch(err) {
-        console.log(err, '\nAn error occurred on guildMemberAdd event.'.bgRed);
-    }
-})
+client.on('guildMemberAdd', () => {
+    const discordId = member.user.id;
+    newGuildMember.push(discordId);
+});
 
 function mainProcess() {
-        ls.start('Finding live stream video...');
-    
-        checkProcess(config['channelId'], ls)
-            .then(id => {
-                if (!id) return;
-                liveStramProcess(id, ls);
-            })
-            .catch(err => {
-                ls.fail();
-                console.log(err, '\nAn Error occurred, checkProcess has stopped.'.bgRed);
+    ls.start('Finding live stream video...');
+
+    checkProcess(config['channelId'], ls)
+        .then(id => {
+            if (!id) return;
+            liveStramProcess(id, ls);
+        })
+        .catch(err => {
+            ls.fail();
+            console.log(err, '\nAn Error occurred, checkProcess has stopped.'.bgRed);
+        });
+}
+
+const addNewGuildMember =  async () => {
+    if (!newGuildMember) return;
+
+    for (discordId of newGuildMember) {
+        try {
+            const proflie = await getUserProfile(discordId).catch(err => {throw err});
+
+            if (!proflie) return;
+
+            db.put(proflie.key.youtubeId, proflie.value, (err) => {
+                if (err) throw err;
             });
+        } catch(err) {
+            console.log(err, '\nAn error occurred on addNewGuildMember function.'.bgRed);
+        }
+    }
+    
+    newGuildMember = [];
 }
 
 const updateDBtimer = async () => {
     await sleep(loopDelay.updateDB * 3600 * 1000);
+    await addNewGuildMember();
+
     const onlineUser = (await client.guilds.fetch(guildId)).members.cache.filter(user => user.presence.status != 'offline').array();
     for (const user of onlineUser) {
         const proflie = await getUserProfile(user.id);
+        
         if (proflie) {
            db.put(proflie.key.youtubeId, proflie.value, err => {
                 if (err) throw err;
