@@ -5,6 +5,7 @@ const colors = require('colors');
 const ora = require('ora');
 const cheerio = require('cheerio');
 const fetch = require('node-fetch');
+const pRetry = require('p-retry');
 const fs = require('fs');
 const config = require('./config.json');
 
@@ -86,7 +87,7 @@ client.on('message', msg => {
 
 });
 
-client.on('guildMemberAdd', () => {
+client.on('guildMemberAdd', (member) => {
     const discordId = member.user.id;
     newGuildMember.push(discordId);
 });
@@ -134,12 +135,18 @@ const updateDBtimer = async () => {
         const proflie = await getUserProfile(user.id);
         
         if (proflie) {
-           db.put(proflie.key.youtubeId, proflie.value, err => {
-                if (err) throw err;
-            });
-            await sleep(Math.ceil((loopDelay.discordProfile * 1000) / config['user_token'].length));
             db.get(proflie.key.youtubeId, (err, value) => {
-                if (err) throw err;
+                if (err) {
+                    if (err.notFound) {
+                        return;
+                    } else {
+                        return console.log(err);
+                    }
+                }
+
+                db.put(proflie.key.youtubeId, Object.assign(value, proflie.value) , err => {
+                    if (err) throw err;
+                });
 
                 if (value.hasOwnProperty('youtubeMember')) {
                     if (value.youtubeMember.active == false) return;
@@ -149,7 +156,8 @@ const updateDBtimer = async () => {
                     if (lastUpdateToNow >  config['removeRoleUndetectedAfter'] * 86400 * 1000) {
                         db.put(proflie.key.youtubeId, Object.assign(value, {
                             youtubeMember: {
-                                active: false
+                                active: false,
+                                lastUpdateAt: Date.now()
                             }
                         }), err => {
                             if (err) throw err;
@@ -160,6 +168,7 @@ const updateDBtimer = async () => {
                     }
                 }
             })
+            
         }
     }
     return updateDBtimer();
@@ -167,46 +176,58 @@ const updateDBtimer = async () => {
 
 const getUserProfile = (discordId) => {
     return new Promise((resolve, reject) => {
-        fetch(`https://discord.com/api/v8/users/${discordId}/profile`, { headers: { authorization: userToken } })
-            .then(res => {
-                // console.log(res.status);
-                // console.log(userTokenCount);
-                // If being rate limited
-                if (res.status == 429) throw Error('Reach request rete limit.');
-                
-                if (haveMultipleUserToken) switchUserToken();
+        pRetry(async () => {
+            await sleep(Math.ceil((loopDelay.discordProfile * 1000) / config['user_token'].length));
+            await fetch(`https://discord.com/api/v8/users/${discordId}/profile`, { headers: { authorization: userToken } })
+                .then(res => {
+                    // console.log(res.status);
+                    // console.log(userTokenCount);
+                    // If being rate limited
+                    if (res.status == 429) return reject(Error('Reach request rete limit.'));
+                    
+                    if (haveMultipleUserToken) switchUserToken();
 
-                return res.json();
-            })
-            .then(data => {
-                // console.log(data);
-                const accountLength = data['connected_accounts'].length;
-                if (accountLength) {
-                    for (let i = 0; i < accountLength; i++) {
-                        const account = data['connected_accounts'][i];
-                        if (account['type'] == 'youtube' && account['verified'] == true) {
-                            const user = data['user'];
-                            resolve({
-                                key: {
-                                    youtubeId: account['id']
-                                },
-                                value: {
-                                    discordId: user['id'],
-                                    username: user['username'],
-                                    lastUpdateAt: Date.now()
-                                }
-                            });
-                        } else {
-                            if (i == accountLength - 1) resolve(null);
-                        }
+                    return res.json();
+                })
+                .then(data => {
+                    // console.log(data);
+
+                    let accountLength;
+                    try {
+                        accountLength = data['connected_accounts'].length;
+                    } catch(err) {
+                        // retry if discord send back a bad response
+                        console.log(data);
+                        throw new pRetry.AbortError(err);
                     }
-                } else {
-                    resolve(null);
-                }
-            })
-            .catch(err => {
-                reject(err);
-            })
+                    
+                    if (accountLength) {
+                        for (let i = 0; i < accountLength; i++) {
+                            const account = data['connected_accounts'][i];
+                            if (account['type'] == 'youtube' && account['verified'] == true) {
+                                const user = data['user'];
+                                resolve({
+                                    key: {
+                                        youtubeId: account['id']
+                                    },
+                                    value: {
+                                        discordId: user['id'],
+                                        username: user['username'],
+                                        lastUpdateAt: Date.now()
+                                    }
+                                });
+                            } else {
+                                if (i == accountLength - 1) resolve(null);
+                            }
+                        }
+                    } else {
+                        resolve(null);
+                    }
+                })
+                // .catch(err => {
+                //     reject(err);
+                // })
+        }, { retries: 3 });
     })
 }
 
@@ -218,7 +239,6 @@ const getDiscordYtIdList = async (ls) => {
         count + '/' + memberList.length + ')'
     );
     
-    
     for (const discordId of memberList) {
         ls.start(
             'Getting Youtube ID from guild members, this may take a while to complete...(' +
@@ -229,20 +249,20 @@ const getDiscordYtIdList = async (ls) => {
             // console.log(profile);
             if (profile) {
                 // const discordId = profile.discordId;
-                await db.get(profile.key.youtubeId , async (err, value) => {
+                db.get(profile.key.youtubeId, (err, value) => {
                     if (err) {
                         if (!err.notFound) {
                             throw err;
                         } else {
                             // if not exists in database, create new one.
                             // console.log(profile[discordId]);
-                            await db.put(profile.key.youtubeId, profile.value, err => {
+                            db.put(profile.key.youtubeId, profile.value, err => {
                                 if (err) throw err;
                             })
                         }
                     } else {
                         // if already exists in database, update it.
-                        await db.put(profile.key.youtubeId, profile.value , err => {
+                        db.put(profile.key.youtubeId, profile.value , err => {
                             if (err) throw err;
                         })
                         // console.log(value);
@@ -252,12 +272,7 @@ const getDiscordYtIdList = async (ls) => {
         } catch(err) {
             ls.fail('Fail to get Youtube ID from guild members.');
             return console.log(err);
-        } finally {
-            // if server resopnse 'HTTP 429 Too Many Requests', try add some delay between request.
-            const delay = loopDelay.discordProfile * 1000;
-            await sleep(Math.ceil(delay / config['user_token'].length));
         }
-        
     }
 
     ls.succeed('Got all Youtube ID from guild members successfully.');
