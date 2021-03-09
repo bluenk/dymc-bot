@@ -13,6 +13,8 @@ Discord youtube membership checker, or dymc for short. Is a simple bot that desi
 * node.js version `12.18.3` or higher
 * Discord bot and user token
 
+If you want to run this on linux server, you need to install `xvfb`.
+
 This project require `puppeteer`, your node_modules will ~~be EVEN FATTER~~ use a lot of space (≅ 390MB).
 
 ## How it work
@@ -43,42 +45,46 @@ Open `config.json` and change those string before you start the bot.
 }
 ```
 
-#### `bot_token` 
+#### bot_token
 
 Go to https://discord.com/developers/applications and create New Applications > Bot > TOKEN, and then enable `Presence Intent` and `Server Members Intent` under the Privileged Gateway Intents.
 
-#### `user_token`
+#### user_token
 
 See how to get your user token https://youtu.be/WWHZoa0SxCc , you can add miltiple user token to reduce fetch member time on first startup.
 
-#### `roleId`
+#### roleId
 
 The discord role you want to add on verified users. Type `\@yourRoleName` on discord to get it.
 
-#### `removeRoleUndetectedAfter`
+#### removeRoleUndetectedAfter
 
 If user undetected more then this value, remove user role.
 
-#### `updateUserProflie`
+#### updateUserProflie
 
 Update database every this value, set to 0 if you don't want to update.
 
-#### `discordRequestDelay`
+#### discordRequestDelay
 
 Delay between each request to discord.
 
-#### `analysisDataOnTextChannelId`
+#### analysisDataOnTextChannelId
 
 When stream ended, the analysis data will send to this text channel. leave it blank if you don't want it.
 
-#### `channelExcludeVideoIds`
+#### channelExcludeVideoIds
 
 if the channel have videos that not gonna stream, like free chat or something.
 
-#### `newMemberBadge`
+#### newMemberBadge
 
 Copy paste the channel new member badge URL, it will look something like this `https://yt3.ggpht.com/i01Y-UCqkjUUeu8TpuXt1hMz7P1ab0vKWesen6OIIGDveOu1m5eOcb8osqnANOPpdyna6RzUkA=s16-c-k`
 
+### Start running
 
+If you run this on windows, type in `npm run start` to start the bot.
 
-And then type in `npm start` to start the bot.
+If you run this on linux-server, type in `npm run server-start` to start the bot.
+
+if you deploy this on heroku, follow this guide https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#running-puppeteer-on-heroku

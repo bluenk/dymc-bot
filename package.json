@@ -1,13 +1,14 @@
 {
   "name": "dymc-bot",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
   "main": "index.js",
   "engines": {
     "node": ">=12.18.3"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "server-start": "xvfb-run -a --server-args='-screen 0 1000x800x16 -ac -nolisten tcp -dpi 96 +extension RANDR' node index.js"
   },
   "dependencies": {
     "cheerio": "^1.0.0-rc.5",

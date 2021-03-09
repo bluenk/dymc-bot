@@ -345,7 +345,11 @@ const liveStramProcess = async (videoId, ls)=> {
     const lunchOptions = {
         headless: false,
         defaultViewport: { width: 500, height: 470 },
-        args: [`--window-size=300,600`]
+        args: [
+            `--window-size=300,600`,
+            `--no-sandbox`,
+            `--disable-setuid-sandbox`
+        ]
     }
     const browser = await puppeteer.launch(lunchOptions);
     const page = await browser.newPage();
