@@ -620,7 +620,7 @@ const liveStramProcess = async (videoId, ls)=> {
                         authorName: chat['authorName']['simpleText'],
                         authorChannelId: chat['authorExternalChannelId'],
                         memberDetail: chat['authorBadges'][0]['liveChatAuthorBadgeRenderer']['tooltip'],
-                        isNewMember: chat['authorBadges'][0]['liveChatAuthorBadgeRenderer']['customThumbnail']['thumbnails'][0].startsWith(newMemberBadge)
+                        isNewMember: chat['authorBadges'][0]['liveChatAuthorBadgeRenderer']['customThumbnail']['thumbnails'][0]['url'].startsWith(newMemberBadge)
                     }
 
                     logMsg = '[Member] ' + newChat.authorName + ' ' + newChat.memberDetail;
@@ -629,7 +629,7 @@ const liveStramProcess = async (videoId, ls)=> {
                         memberList.add(newChat.authorChannelId);
                     }
 
-                    await db.get(newChat.authorChannelId, (err, value) => {
+                    db.get(newChat.authorChannelId, (err, value) => {
                         if (err) {
                             if (err.notFound) {
                                 return;
