@@ -99,19 +99,19 @@ client.on('message', async (msg) => {
                     msg.channel.send(`使用者 <@${discordId}> 沒有連結或顯示Youtube帳號在個人檔案上。`); // User <@${discordId} didn't connect or show youtube account on proflie.
                 } else {
                     db.get(profile.key.youtubeId, (err, value) => {
-                    if (err) {
-                        if (err.notFound) {
-                            db.put(profile.key.youtubeId, profile.value, err => {
-                               if (err) console.log(err); 
-                            });
-                        } else {
-                            console.log(err);
+                        if (err) {
+                            if (err.notFound) {
+                                db.put(profile.key.youtubeId, profile.value, err => {
+                                    if (err) console.log(err); 
+                                });
+                            } else {
+                                console.log(err);
+                            }
                         }
                         db.put(profile.key.youtubeId, Object.assign(value, profile.value), err => {
-                           if (err) console.log(err); 
+                            if (err) console.log(err); 
                         });
-                    }
-                });
+                    });
                 }
             }
             msg.channel.send('Done!');
