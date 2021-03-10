@@ -104,8 +104,10 @@ client.on('message', async (msg) => {
                                 db.put(profile.key.youtubeId, profile.value, err => {
                                     if (err) console.log(err); 
                                 });
+                                return;
                             } else {
                                 console.log(err);
+                                return;
                             }
                         }
                         db.put(profile.key.youtubeId, Object.assign(value, profile.value), err => {
@@ -176,6 +178,7 @@ const updateDBtimer = async () => {
                         db.put(proflie.key.youtubeId, proflie.value, err => {
                             if (err) console.log(err);
                         });
+                        return;
                     } else {
                         return console.log(err);
                     }
