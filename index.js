@@ -81,9 +81,44 @@ client.on('ready',async () => {
     mainProcess();
 });
 
-client.on('message', msg => {
+client.on('message', async (msg) => {
 
-    if (msg.content == 'd.ping') msg.channel.send('pong!');
+    if (msg.author.bot) return;
+    if (!msg.member.hasPermission('ADMINISTRATOR')) return;
+
+    const args = msg.content.split(' ');
+
+    if (args[0] == 'd.ping') msg.channel.send('pong!');
+
+    if (args[0] == 'd.force-check') {
+        if (msg.mentions.users.size != 0) {
+            for (discordId of msg.mentions.users.keys()) {
+                const profile = await getUserProfile(discordId);
+
+                if (!profile) {
+                    msg.channel.send(`使用者 <@${discordId}> 沒有連結或顯示Youtube帳號在個人檔案上。`); // User <@${discordId} didn't connect or show youtube account on proflie.
+                } else {
+                    db.get(profile.key.youtubeId, (err, value) => {
+                    if (err) {
+                        if (err.notFound) {
+                            db.put(profile.key.youtubeId, profile.value, err => {
+                               if (err) console.log(err); 
+                            });
+                        } else {
+                            console.log(err);
+                        }
+                        db.put(profile.key.youtubeId, Object.assign(value, profile.value), err => {
+                           if (err) console.log(err); 
+                        });
+                    }
+                });
+                }
+            }
+            msg.channel.send('Done!');
+        } else {
+            msg.channel.send('使用方法: d.force-check <tag使用者> [more user...]', { code: '' }); // Usage: d.force-check <tagUser> [more user...]
+        }
+    }
 
 });
 
@@ -138,7 +173,9 @@ const updateDBtimer = async () => {
             db.get(proflie.key.youtubeId, (err, value) => {
                 if (err) {
                     if (err.notFound) {
-                        return;
+                        db.put(proflie.key.youtubeId, proflie.value, err => {
+                            if (err) console.log(err);
+                        });
                     } else {
                         return console.log(err);
                     }
@@ -196,9 +233,14 @@ const getUserProfile = (discordId) => {
                     try {
                         accountLength = data['connected_accounts'].length;
                     } catch(err) {
-                        // retry if discord send back a bad response
-                        console.log(data);
-                        throw new pRetry.AbortError(err);
+                        if (data.hasOwnProperty('code')) {
+                            // 50001 Missing Access
+                            if (data.code == 50001) resolve(null);
+                        } else {
+                            // retry if discord send back a bad response
+                            console.log( '\n' + data, 'discordId: ' + discordId);
+                            throw new pRetry.AbortError(err);
+                        }
                     }
                     
                     if (accountLength) {
@@ -514,7 +556,7 @@ const liveStramProcess = async (videoId, ls)=> {
                                     }
                                 }
                                 // console.log('isGuildMember!'.bgMagenta);
-                                showGuildMemberLog = true;
+                                // showGuildMemberLog = true;
                                 // const guildMemberDetail = value;
                                 db.put(newChat.authorChannelId, Object.assign(value, {
                                     youtubeMember: {
@@ -555,7 +597,7 @@ const liveStramProcess = async (videoId, ls)=> {
                         chatAnalysis.totalChats += 1;
                         notMemberList.add(newChat.authorChannelId);
 
-                        await db.get(newChat.authorChannelId, (err, value) => {
+                        db.get(newChat.authorChannelId, (err, value) => {
                             if (err) {
                                 if (err.notFound) {
                                     return;
@@ -564,7 +606,7 @@ const liveStramProcess = async (videoId, ls)=> {
                                 }
                             }
                             if (!value.hasOwnProperty('youtubeMember')) return;
-                            if (value.youtubeMember.active == true) showGuildMemberLog = true;
+                            // if (value.youtubeMember.active == true) showGuildMemberLog = true;
                             
                             db.put(newChat.authorChannelId, Object.assign(value, {
                                 youtubeMember: {
@@ -641,7 +683,7 @@ const liveStramProcess = async (videoId, ls)=> {
                                 throw err;
                             }
                         }
-                        showGuildMemberLog = true;
+                        // showGuildMemberLog = true;
                         if (newChat.isNewMember) {
                             console.log((
                                 '['.black + '+'.red +'] '.black +

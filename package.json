@@ -1,6 +1,6 @@
 {
   "name": "dymc-bot",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "",
   "main": "index.js",
   "engines": {
@@ -23,6 +23,7 @@
   "author": "bluenk",
   "license": "MIT",
   "repository": {
-    "url": "https://github.com/bluenk/dymc-bot"
+    "type": "git",
+    "url": "git+https://github.com/bluenk/dymc-bot.git"
   }
 }
